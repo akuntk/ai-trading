@@ -51,7 +51,8 @@ export default function HowItWorksSection({
   return (
     <AnimatedSection id="how-it-works" backgroundColor="var(--brand-dark-gray)">
       <div className="max-w-7xl mx-auto">
-        <motion.div
+        {/* 隐藏使用步骤部分，仅保留风险提示 */}
+        {/* <motion.div
           className="text-center mb-16"
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -93,7 +94,7 @@ export default function HowItWorksSection({
           ].map((step, index) => (
             <StepCard key={step.number} {...step} delay={index * 0.1} />
           ))}
-        </div>
+        </div> */}
 
         <motion.div
           className="mt-12 p-6 rounded-xl flex items-start gap-4"
