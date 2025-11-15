@@ -13,7 +13,7 @@ export default function HeroSection({ language }: HeroSectionProps) {
   const opacity = useTransform(scrollYProgress, [0, 0.2], [1, 0])
   const scale = useTransform(scrollYProgress, [0, 0.2], [1, 0.8])
   const handControls = useAnimation()
-  const { stars, daysOld, isLoading } = useGitHubStats('NoFxAiOS', 'nofx')
+  const { stars, daysOld, isLoading } = useGitHubStats('akuntk', 'ai-trading')
 
   // 动画数字 - 仅对 stars 添加动画
   const animatedStars = useCounterAnimation({
@@ -89,40 +89,40 @@ export default function HeroSection({ language }: HeroSectionProps) {
 
             <div className="flex items-center gap-3 flex-wrap" style={{ display: 'none' }}>
               <motion.a
-                href="https://github.com/tinkle-community/nofx"
+                href="https://github.com/akuntk/ai-trading"
                 target="_blank"
                 rel="noopener noreferrer"
                 whileHover={{ scale: 1.05 }}
                 transition={{ type: 'spring', stiffness: 400 }}
               >
                 <img
-                  src="https://img.shields.io/github/stars/tinkle-community/nofx?style=for-the-badge&logo=github&logoColor=white&color=F0B90B&labelColor=0A0A0A"
+                  src="https://img.shields.io/github/stars/akuntk/ai-trading?style=for-the-badge&logo=github&logoColor=white&color=F0B90B&labelColor=0A0A0A"
                   alt="GitHub Stars"
                   className="h-7"
                 />
               </motion.a>
               <motion.a
-                href="https://github.com/tinkle-community/nofx/network/members"
+                href="https://github.com/akuntk/ai-trading/network/members"
                 target="_blank"
                 rel="noopener noreferrer"
                 whileHover={{ scale: 1.05 }}
                 transition={{ type: 'spring', stiffness: 400 }}
               >
                 <img
-                  src="https://img.shields.io/github/forks/tinkle-community/nofx?style=for-the-badge&logo=github&logoColor=white&color=F0B90B&labelColor=0A0A0A"
+                  src="https://img.shields.io/github/forks/akuntk/ai-trading?style=for-the-badge&logo=github&logoColor=white&color=F0B90B&labelColor=0A0A0A"
                   alt="GitHub Forks"
                   className="h-7"
                 />
               </motion.a>
               <motion.a
-                href="https://github.com/tinkle-community/nofx/graphs/contributors"
+                href="https://github.com/akuntk/ai-trading/graphs/contributors"
                 target="_blank"
                 rel="noopener noreferrer"
                 whileHover={{ scale: 1.05 }}
                 transition={{ type: 'spring', stiffness: 400 }}
               >
                 <img
-                  src="https://img.shields.io/github/contributors/tinkle-community/nofx?style=for-the-badge&logo=github&logoColor=white&color=F0B90B&labelColor=0A0A0A"
+                  src="https://img.shields.io/github/contributors/akuntk/ai-trading?style=for-the-badge&logo=github&logoColor=white&color=F0B90B&labelColor=0A0A0A"
                   alt="GitHub Contributors"
                   className="h-7"
                 />

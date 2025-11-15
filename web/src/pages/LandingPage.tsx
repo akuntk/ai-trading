@@ -97,7 +97,7 @@ export function LandingPage() {
                 </motion.div>
               </motion.button>
               <motion.a
-                href="https://github.com/tinkle-community/nofx/tree/dev"
+                href="https://github.com/akuntk/ai-trading"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 px-10 py-4 rounded-lg font-semibold text-lg"

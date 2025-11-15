@@ -19,7 +19,9 @@
       "Bash(git config:*)",
       "Bash(echo:*)",
       "Bash(.gitignore)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git remote add:*)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []
