@@ -135,6 +135,12 @@ func (vc *VersionChecker) checkForUpdates() {
 	// 获取当前版本
 	currentVersion := getAppVersion()
 
+	// 检查latestVersion是否为nil
+	if latestVersion == nil {
+		log.Printf("⚠️  无法获取最新版本信息，跳过版本检查")
+		return
+	}
+
 	// 比较版本
 	hasUpdate := compareVersions(latestVersion.Version, currentVersion) > 0
 	if !hasUpdate {

@@ -159,23 +159,35 @@ func (s *Server) handleCheckUpdate(c *gin.Context) {
 
 	// 比较版本
 	currentVer := getAppVersion()
-	hasUpdate := compareVersions(latestVersion.Version, currentVer) > 0
+	var hasUpdate bool
+	var isCritical bool
 
-	// 检查是否为关键更新
-	isCritical := latestVersion.IsCriticalUpdate ||
-		compareVersions(currentVer, latestVersion.MinVersion) < 0
+	if latestVersion != nil {
+		hasUpdate = compareVersions(latestVersion.Version, currentVer) > 0
+		// 检查是否为关键更新
+		isCritical = latestVersion.IsCriticalUpdate ||
+			compareVersions(currentVer, latestVersion.MinVersion) < 0
+	} else {
+		hasUpdate = false
+		isCritical = false
+	}
 
 	updateStatus := &UpdateStatus{
 		HasUpdate:        hasUpdate,
 		CurrentVer:       currentVer,
-		LatestVer:        latestVersion.Version,
 		LastCheck:        time.Now(),
-		DownloadURL:      latestVersion.DownloadURL,
 		AutoUpdateEnabled: s.getAutoUpdateSetting(),
 	}
 
-	if hasUpdate {
-		updateStatus.UpdateInfo = latestVersion
+	if latestVersion != nil {
+		updateStatus.LatestVer = latestVersion.Version
+		updateStatus.DownloadURL = latestVersion.DownloadURL
+		if hasUpdate {
+			updateStatus.UpdateInfo = latestVersion
+		}
+	} else {
+		updateStatus.LatestVer = currentVer
+		updateStatus.DownloadURL = ""
 	}
 
 	// 保存检查记录
@@ -186,7 +198,7 @@ func (s *Server) handleCheckUpdate(c *gin.Context) {
 		"data":    updateStatus,
 	})
 
-	if hasUpdate {
+	if hasUpdate && latestVersion != nil {
 		log.Printf("🔔 发现新版本: %s -> %s", currentVer, latestVersion.Version)
 		if isCritical {
 			log.Printf("⚠️  检测到关键更新，建议立即更新！")
@@ -431,27 +443,32 @@ func (s *Server) fetchLatestVersion() (*VersionInfo, error) {
 
 	updateServerURL := "https://api.github.com/repos/akuntk/ai-trading/releases/latest"
 
-	// 模拟网络请求
+	// 尝试从GitHub API获取版本信息
 	resp, err := http.Get(updateServerURL)
 	if err != nil {
-		// 如果远程获取失败，返回本地配置的版本
-		return s.getLocalVersionInfo(), nil
+		// 如果远程获取失败，返回当前应用版本（无更新）
+		log.Printf("⚠️  无法连接GitHub API: %v", err)
+		return nil, nil
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return s.getLocalVersionInfo(), nil
+		log.Printf("⚠️  GitHub API返回错误状态码: %d", resp.StatusCode)
+		return nil, nil
 	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return s.getLocalVersionInfo(), nil
+		log.Printf("⚠️  读取GitHub API响应失败: %v", err)
+		return nil, nil
 	}
 
 	var release struct {
 		TagName      string    `json:"tag_name"`
 		Name         string    `json:"name"`
 		Body         string    `json:"body"`
+		Draft         bool      `json:"draft"`
+		Prerelease    bool      `json:"prerelease"`
 		PublishedAt  time.Time `json:"published_at"`
 		Assets       []struct {
 			Name               string `json:"name"`
@@ -461,7 +478,14 @@ func (s *Server) fetchLatestVersion() (*VersionInfo, error) {
 	}
 
 	if err := json.Unmarshal(body, &release); err != nil {
-		return s.getLocalVersionInfo(), nil
+		log.Printf("⚠️  解析GitHub API响应失败: %v", err)
+		return nil, nil
+	}
+
+	// 跳过草稿和预发布版本
+	if release.Draft || release.Prerelease {
+		log.Printf("ℹ️  跳过草稿/预发布版本: %s", release.TagName)
+		return nil, nil
 	}
 
 	versionInfo := &VersionInfo{
@@ -492,10 +516,10 @@ func (s *Server) fetchLatestVersion() (*VersionInfo, error) {
 // getLocalVersionInfo 获取本地配置的版本信息
 func (s *Server) getLocalVersionInfo() *VersionInfo {
 	return &VersionInfo{
-		Version:         "1.0.1",
-		BuildTime:       time.Now().Format("2006-01-02 15:04:05"),
+		Version:         getAppVersion(),
+		BuildTime:       getAppBuildTime(),
 		ReleaseDate:     time.Now().Format("2006-01-02"),
-		ReleaseNotes:    "新功能:\n- 添加自动版本控制和更新系统\n- 改进用户界面\n- 修复已知问题",
+		ReleaseNotes:    "当前运行版本",
 		DownloadURL:     "",
 		UpdateSize:      0,
 		IsCriticalUpdate: false,
@@ -1565,4 +1589,82 @@ func (s *Server) handleCreateBackup(c *gin.Context) {
 			"timestamp":   timestamp,
 		},
 	})
+}
+
+// getGitCommit 获取Git提交信息
+func (s *Server) getGitCommit() string {
+	// 可以从编译时注入或运行时获取
+	if commit := os.Getenv("GIT_COMMIT"); commit != "" {
+		return commit
+	}
+	return "unknown"
+}
+
+// getDatabaseVersion 获取数据库版本
+func (s *Server) getDatabaseVersion() string {
+	// 获取数据库迁移版本
+	migrationManager := NewMigrationManager(s.database)
+	if err := migrationManager.LoadMigrations(); err != nil {
+		log.Printf("获取数据库版本失败: %v", err)
+		return "unknown"
+	}
+
+	version, err := migrationManager.GetCurrentDBVersion()
+	if err != nil {
+		log.Printf("获取当前数据库版本失败: %v", err)
+		return "unknown"
+	}
+
+	return version
+}
+
+// canAutoUpdate 检查是否可以自动更新
+func (s *Server) canAutoUpdate() bool {
+	// 检查操作系统权限和文件访问权限
+	switch runtime.GOOS {
+	case "windows":
+		// 检查是否有管理员权限
+		_, err := os.Stat("C:\\Windows\\System32")
+		return err == nil
+	case "linux", "darwin":
+		// 检查当前用户是否有写权限
+		execPath, err := os.Executable()
+		if err != nil {
+			return false
+		}
+		// 尝试创建临时文件来测试写权限
+		testFile := execPath + ".test"
+		file, err := os.Create(testFile)
+		if err != nil {
+			return false
+		}
+		file.Close()
+		os.Remove(testFile)
+		return true
+	default:
+		return false
+	}
+}
+
+// getMigrationStatusInfo 获取迁移状态信息
+func (s *Server) getMigrationStatusInfo() map[string]interface{} {
+	migrationManager := NewMigrationManager(s.database)
+	if err := migrationManager.LoadMigrations(); err != nil {
+		return map[string]interface{}{
+			"current_version": "unknown",
+			"needs_migration": false,
+			"error": err.Error(),
+		}
+	}
+
+	status, err := migrationManager.GetMigrationStatus()
+	if err != nil {
+		return map[string]interface{}{
+			"current_version": "unknown",
+			"needs_migration": false,
+			"error": err.Error(),
+		}
+	}
+
+	return status
 }
