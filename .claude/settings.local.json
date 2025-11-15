@@ -21,7 +21,13 @@
       "Bash(.gitignore)",
       "Bash(git add:*)",
       "Bash(git remote add:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(git commit:*)",
+      "Bash(.nofx.exe)",
+      "Bash(./nofx-fixed.exe)",
+      "Bash(./nofx-v2.exe)",
+      "Bash(del:*)",
+      "Bash(xargs:*)"
     ],
     "deny": [],
     "ask": []
