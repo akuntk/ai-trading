@@ -566,7 +566,7 @@ export const translations = {
       'Monitor trading, submit PRs to improve framework. Join Telegram to share strategies.',
     importantRiskWarning: 'Important Risk Warning',
     riskWarningText:
-      'Dev branch is unstable, do not use funds you cannot afford to lose. NOFX is non-custodial, no official strategies. Trading involves risks, invest carefully.',
+      'Do not use funds you cannot afford to lose. NOFX is non-custodial, no official strategies. Trading involves risks, invest carefully.',
 
     // Community Section (testimonials are kept as-is since they are quotes)
 
@@ -1319,7 +1319,7 @@ export const translations = {
     step4Desc: '监控交易，提交 PR 改进框架。加入 Telegram 分享策略。',
     importantRiskWarning: '重要风险提示',
     riskWarningText:
-      'dev 分支不稳定，勿用无法承受损失的资金。NOFX 非托管，无官方策略。交易有风险，投资需谨慎。',
+      '勿用无法承受损失的资金。NOFX 非托管，无官方策略。交易有风险，投资需谨慎。',
 
     // Community Section (testimonials are kept as-is since they are quotes)
 

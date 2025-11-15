@@ -1,0 +1,10 @@
+{
+  "version": "1.0.1",
+  "name": "add_trader_performance_index",
+  "description": "添加交易员性能指标表，用于跟踪交易员的详细性能数据",
+  "up_sql": "CREATE TABLE IF NOT EXISTS trader_performance (\n    id INTEGER PRIMARY KEY AUTOINCREMENT,\n    trader_id VARCHAR(50) NOT NULL,\n    date DATE NOT NULL,\n    total_profit REAL NOT NULL DEFAULT 0,\n    total_trades INTEGER NOT NULL DEFAULT 0,\n    winning_trades INTEGER NOT NULL DEFAULT 0,\n    max_drawdown REAL NOT NULL DEFAULT 0,\n    sharpe_ratio REAL DEFAULT 0,\n    sortino_ratio REAL DEFAULT 0,\n    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,\n    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,\n    FOREIGN KEY (trader_id) REFERENCES traders (id),\n    UNIQUE(trader_id, date)\n);\n\nCREATE INDEX IF NOT EXISTS idx_trader_performance_trader_id ON trader_performance(trader_id);\nCREATE INDEX IF NOT EXISTS idx_trader_performance_date ON trader_performance(date);",
+  "down_sql": "DROP TABLE IF EXISTS trader_performance;",
+  "author": "System",
+  "created_at": "2025-11-15T22:35:00Z",
+  "is_critical": false
+}

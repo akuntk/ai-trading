@@ -13,7 +13,11 @@ import {
   Zap,
   Settings,
   History,
-  RotateCcw
+  RotateCcw,
+  Database,
+  ArrowUp,
+  ArrowDown,
+  Save
 } from 'lucide-react';
 
 interface VersionInfo {
@@ -62,6 +66,35 @@ interface UpdateHistory {
   success: boolean;
 }
 
+interface MigrationStatus {
+  current_version: string;
+  pending_migrations: number;
+  total_migrations: number;
+  needs_migration: boolean;
+  pending_details?: Array<{
+    version: string;
+    name: string;
+    description: string;
+    is_critical: boolean;
+  }>;
+}
+
+interface PendingMigration {
+  version: string;
+  name: string;
+  description: string;
+  up_sql: string;
+  down_sql: string;
+  author: string;
+  created_at: string;
+  is_critical: boolean;
+}
+
+interface BackupResult {
+  backup_path: string;
+  timestamp: string;
+}
+
 const VersionUpdate: React.FC = () => {
   const [currentVersion, setCurrentVersion] = useState<VersionInfo | null>(null);
   const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null);
@@ -69,8 +102,13 @@ const VersionUpdate: React.FC = () => {
   const [restartStatus, setRestartStatus] = useState<RestartStatus | null>(null);
   const [updateHistory, setUpdateHistory] = useState<UpdateHistory[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'overview' | 'history' | 'settings'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'history' | 'settings' | 'migration'>('overview');
   const [error, setError] = useState<string | null>(null);
+
+  // 迁移相关状态
+  const [migrationStatus, setMigrationStatus] = useState<MigrationStatus | null>(null);
+  const [pendingMigrations, setPendingMigrations] = useState<PendingMigration[]>([]);
+  const [isMigrationLoading, setIsMigrationLoading] = useState(false);
 
   // 获取当前版本
   const fetchCurrentVersion = useCallback(async () => {
@@ -284,6 +322,117 @@ const VersionUpdate: React.FC = () => {
     }
   }, []);
 
+  // 获取迁移状态
+  const fetchMigrationStatus = useCallback(async () => {
+    try {
+      const response = await fetch('/api/version/migration/status');
+      const data = await response.json();
+      if (data.success) {
+        setMigrationStatus(data.data);
+      }
+    } catch (error) {
+      console.error('获取迁移状态失败:', error);
+    }
+  }, []);
+
+  // 获取待执行迁移
+  const fetchPendingMigrations = useCallback(async () => {
+    try {
+      const response = await fetch('/api/version/migration/pending');
+      const data = await response.json();
+      if (data.success) {
+        setPendingMigrations(data.data || []);
+      }
+    } catch (error) {
+      console.error('获取待执行迁移失败:', error);
+    }
+  }, []);
+
+  // 执行迁移
+  const executeMigration = useCallback(async (version: string, autoBackup = true) => {
+    setIsMigrationLoading(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/version/migration/execute', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          version,
+          auto_backup: autoBackup,
+        }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        await fetchMigrationStatus();
+        await fetchPendingMigrations();
+      } else {
+        setError(data.error || '执行迁移失败');
+      }
+    } catch (error) {
+      setError('执行迁移失败，请稍后重试');
+      console.error('执行迁移失败:', error);
+    } finally {
+      setIsMigrationLoading(false);
+    }
+  }, [fetchMigrationStatus, fetchPendingMigrations]);
+
+  // 回滚迁移
+  const rollbackMigration = useCallback(async (targetVersion: string) => {
+    setIsMigrationLoading(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/version/migration/rollback', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          target_version: targetVersion,
+        }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        await fetchMigrationStatus();
+        await fetchPendingMigrations();
+      } else {
+        setError(data.error || '回滚迁移失败');
+      }
+    } catch (error) {
+      setError('回滚迁移失败，请稍后重试');
+      console.error('回滚迁移失败:', error);
+    } finally {
+      setIsMigrationLoading(false);
+    }
+  }, [fetchMigrationStatus, fetchPendingMigrations]);
+
+  // 创建备份
+  const createBackup = useCallback(async () => {
+    setIsMigrationLoading(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/version/migration/backup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}),
+      });
+      const data = await response.json();
+      if (data.success) {
+        alert(`备份创建成功！\n备份路径: ${data.data.backup_path}\n备份时间: ${data.data.timestamp}`);
+      } else {
+        setError(data.error || '创建备份失败');
+      }
+    } catch (error) {
+      setError('创建备份失败，请稍后重试');
+      console.error('创建备份失败:', error);
+    } finally {
+      setIsMigrationLoading(false);
+    }
+  }, []);
+
   // 格式化文件大小
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 B';
@@ -319,6 +468,7 @@ const VersionUpdate: React.FC = () => {
     fetchCurrentVersion();
     checkForUpdates();
     fetchRestartStatus();
+    fetchMigrationStatus();
 
     // 设置定时检查
     const interval = setInterval(() => {
@@ -327,13 +477,16 @@ const VersionUpdate: React.FC = () => {
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [fetchCurrentVersion, checkForUpdates, fetchUpdateProgress, fetchRestartStatus]);
+  }, [fetchCurrentVersion, checkForUpdates, fetchUpdateProgress, fetchRestartStatus, fetchMigrationStatus]);
 
   useEffect(() => {
     if (activeTab === 'history') {
       fetchUpdateHistory();
+    } else if (activeTab === 'migration') {
+      fetchMigrationStatus();
+      fetchPendingMigrations();
     }
-  }, [activeTab, fetchUpdateHistory]);
+  }, [activeTab, fetchUpdateHistory, fetchMigrationStatus, fetchPendingMigrations]);
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -365,6 +518,14 @@ const VersionUpdate: React.FC = () => {
           >
             <Settings className="w-4 h-4 mr-2" />
             设置
+          </Button>
+          <Button
+            variant={activeTab === 'migration' ? 'default' : 'outline'}
+            onClick={() => setActiveTab('migration')}
+            className={activeTab === 'migration' ? 'bg-binance-yellow text-black hover:bg-binance-yellow-light' : 'border-binance-yellow text-binance-yellow hover:bg-binance-yellow hover:bg-opacity-10'}
+          >
+            <Database className="w-4 h-4 mr-2" />
+            迁移管理
           </Button>
         </div>
       </div>
@@ -601,6 +762,14 @@ const VersionUpdate: React.FC = () => {
                     重启应用
                   </Button>
                 </div>
+
+                <Alert className="mt-4">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription>
+                    <strong>自动更新包含：</strong>
+                    如果新版本需要数据库结构变更，系统会自动创建备份并执行数据库迁移，无需手动操作。
+                  </AlertDescription>
+                </Alert>
               </CardContent>
             </Card>
           )}
@@ -638,6 +807,153 @@ const VersionUpdate: React.FC = () => {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {activeTab === 'migration' && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* 迁移状态 */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Database className="w-5 h-5 text-blue-500" />
+                数据库迁移状态
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {migrationStatus && (
+                <>
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">当前版本</span>
+                    <Badge variant="secondary">{migrationStatus.current_version}</Badge>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">待执行迁移</span>
+                    <div className="flex items-center gap-2">
+                      {migrationStatus.needs_migration && (
+                        <Badge variant="destructive">需要迁移</Badge>
+                      )}
+                      <span className="text-sm">{migrationStatus.pending_migrations} 个</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">总迁移数</span>
+                    <span className="text-sm text-gray-600">{migrationStatus.total_migrations}</span>
+                  </div>
+                </>
+              )}
+              <div className="flex gap-3 pt-4">
+                <Button
+                  onClick={() => fetchMigrationStatus()}
+                  variant="outline"
+                  className="border-binance-yellow text-binance-yellow hover:bg-binance-yellow hover:bg-opacity-10"
+                >
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  刷新状态
+                </Button>
+                <Button
+                  onClick={createBackup}
+                  disabled={isMigrationLoading}
+                  variant="outline"
+                  className="border-binance-yellow text-binance-yellow hover:bg-binance-yellow hover:bg-opacity-10"
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  创建备份
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* 迁移操作 */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ArrowUp className="w-5 h-5 text-green-500" />
+                迁移操作
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-gray-600">
+                执行数据库迁移前，系统会自动创建备份以确保数据安全。
+              </p>
+              <div className="space-y-3">
+                {pendingMigrations && pendingMigrations.length > 0 ? (
+                  pendingMigrations.map((migration, index) => (
+                    <div key={index} className="border rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-medium">{migration.name}</h4>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline">{migration.version}</Badge>
+                          {migration.is_critical && (
+                            <Badge variant="destructive">关键</Badge>
+                          )}
+                        </div>
+                      </div>
+                      <p className="text-sm text-gray-600 mb-3">{migration.description}</p>
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => executeMigration(migration.version)}
+                          disabled={isMigrationLoading}
+                          className="flex-1"
+                        >
+                          <ArrowUp className="w-4 h-4 mr-2" />
+                          执行迁移
+                        </Button>
+                        <Button
+                          onClick={() => {
+                            if (confirm(`确定要回滚到版本 ${migration.version} 吗？\n\n此操作将撤销该版本之后的所有迁移。`)) {
+                              rollbackMigration(migration.version);
+                            }
+                          }}
+                          disabled={isMigrationLoading}
+                          variant="outline"
+                          className="border-binance-yellow text-binance-yellow hover:bg-binance-yellow hover:bg-opacity-10"
+                        >
+                          <ArrowDown className="w-4 h-4 mr-2" />
+                          回滚
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <CheckCircle className="w-12 h-12 mx-auto mb-4 text-green-500" />
+                    <p>数据库已是最新版本，无需执行迁移。</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* 迁移历史详情 */}
+          {migrationStatus && migrationStatus.pending_details && migrationStatus.pending_details.length > 0 && (
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <History className="w-5 h-5 text-purple-500" />
+                  待执行迁移详情
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {migrationStatus.pending_details.map((detail, index) => (
+                    <div key={index} className="border-l-4 border-purple-300 pl-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-medium flex items-center gap-2">
+                          {detail.name}
+                          {detail.is_critical && (
+                            <Badge variant="destructive" className="text-xs">关键迁移</Badge>
+                          )}
+                        </h4>
+                        <Badge variant="outline">{detail.version}</Badge>
+                      </div>
+                      <p className="text-sm text-gray-600">{detail.description}</p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       )}
 
       {activeTab === 'settings' && (

@@ -145,6 +145,13 @@ func (s *Server) setupRoutes() {
 		api.GET("/version/history", s.handleGetUpdateHistory)
 		api.POST("/version/rollback", s.handleRollback)
 
+		// 数据库迁移路由（公开接口 - 本地部署无需认证）
+		api.GET("/version/migration/status", s.handleGetMigrationStatus)
+		api.GET("/version/migration/pending", s.handleGetPendingMigrations)
+		api.POST("/version/migration/execute", s.handleExecuteMigration)
+		api.POST("/version/migration/rollback", s.handleRollbackMigration)
+		api.POST("/version/migration/backup", s.handleCreateBackup)
+
 		// 需要认证的路由
 		protected := api.Group("/", s.authMiddleware())
 		{

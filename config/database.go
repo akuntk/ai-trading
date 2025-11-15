@@ -58,6 +58,24 @@ type Database struct {
 	cryptoService *crypto.CryptoService
 }
 
+// DB 获取数据库连接（供迁移系统使用）
+func (d *Database) DB() *sql.DB {
+	return d.db
+}
+
+// Backup 备份数据库到指定路径
+func (d *Database) Backup(backupPath string) error {
+	// 实现SQLite数据库备份
+	return d.backupDatabase(backupPath)
+}
+
+// backupDatabase 执行实际的数据备份
+func (d *Database) backupDatabase(backupPath string) error {
+	// 使用SQLite的VACUUM INTO命令进行备份
+	_, err := d.db.Exec(fmt.Sprintf("VACUUM INTO '%s'", backupPath))
+	return err
+}
+
 // NewDatabase 创建配置数据库
 func NewDatabase(dbPath string) (*Database, error) {
 	db, err := sql.Open("sqlite", dbPath)
