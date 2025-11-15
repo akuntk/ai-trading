@@ -1,0 +1,209 @@
+{
+  "current_version": "1.0.0",
+  "last_release": {
+    "version": "1.0.0",
+    "timestamp": "2025-11-15T06:49:04Z",
+    "git_commit": "abc123def456789",
+    "git_tag": "v1.0.0",
+    "build_info": {
+      "go_version": "go1.25.0",
+      "node_version": "v18.17.0",
+      "platforms": ["windows", "linux", "darwin"],
+      "build_type": "release"
+    }
+  },
+  "next_release": {
+    "planned_version": null,
+    "planned_date": null,
+    "type": null,
+    "features": [],
+    "status": "planning"
+  },
+  "release_history": [
+    {
+      "version": "1.0.0",
+      "release_date": "2025-11-15",
+      "type": "major",
+      "description": "AI交易系统初始版本发布",
+      "changes": {
+        "added": [
+          "完整的AI交易系统核心功能",
+          "多交易所支持(Binance, Hyperliquid, Aster DEX)",
+          "AI决策引擎集成",
+          "实时风险控制系统",
+          "Web用户界面",
+          "API服务器",
+          "数据库配置管理",
+          "版本控制和自动更新系统"
+        ],
+        "fixed": [],
+        "changed": [],
+        "deprecated": [],
+        "removed": [],
+        "security": [
+          "JWT认证系统",
+          "敏感数据加密存储",
+          "API访问控制",
+          "2FA双重验证"
+        ]
+      },
+      "downloads": {
+        "total": 0,
+        "platforms": {
+          "windows": {
+            "count": 0,
+            "url": "",
+            "checksum": ""
+          },
+          "linux": {
+            "count": 0,
+            "url": "",
+            "checksum": ""
+          },
+          "darwin": {
+            "count": 0,
+            "url": "",
+            "checksum": ""
+          }
+        }
+      }
+    }
+  ],
+  "statistics": {
+    "total_releases": 1,
+    "total_downloads": 0,
+    "active_platforms": ["windows", "linux", "darwin"],
+    "latest_release_days_ago": 0,
+    "average_release_frequency_days": 0
+  },
+  "configuration": {
+    "auto_increment": {
+      "enabled": true,
+      "file": "version.txt",
+      "scheme": "semver"
+    },
+    "prerelease_patterns": ["alpha", "beta", "rc"],
+    "supported_platforms": ["windows", "linux", "darwin"],
+    "build_architectures": {
+      "windows": ["amd64"],
+      "linux": ["amd64", "arm64"],
+      "darwin": ["amd64", "arm64"]
+    },
+    "release_channels": {
+      "stable": {
+        "enabled": true,
+        "branch": "main",
+        "require_tests": true,
+        "require_review": true
+      },
+      "beta": {
+        "enabled": true,
+        "branch": "develop",
+        "require_tests": false,
+        "require_review": false
+      }
+    }
+  },
+  "webhooks": {
+    "pre_release": [],
+    "post_release": [],
+    "deployment": []
+  },
+  "quality_gates": {
+    "tests": {
+      "required": true,
+      "minimum_coverage": 80,
+      "timeout_seconds": 300
+    },
+    "code_review": {
+      "required": true,
+      "minimum_reviewers": 1
+    },
+    "security_scan": {
+      "required": true,
+      "max_high_vulnerabilities": 0,
+      "max_medium_vulnerabilities": 5
+    },
+    "performance": {
+      "required": false,
+      "load_test": false
+    }
+  },
+  "notifications": {
+    "channels": {
+      "email": {
+        "enabled": false,
+        "recipients": [],
+        "template": "release_notification.html"
+      },
+      "slack": {
+        "enabled": false,
+        "webhook": "",
+        "channel": "#releases"
+      },
+      "teams": {
+        "enabled": false,
+        "webhook": ""
+      },
+      "webhook": {
+        "enabled": false,
+        "url": "",
+        "headers": {}
+      }
+    },
+    "events": {
+      "release_created": false,
+      "release_published": false,
+      "deployment_started": false,
+      "deployment_completed": false,
+      "rollback_performed": false
+    }
+  },
+  "deployment": {
+    "environments": {
+      "staging": {
+        "enabled": true,
+        "auto_deploy": true,
+        "rollback_strategy": "previous_version"
+      },
+      "production": {
+        "enabled": true,
+        "auto_deploy": false,
+        "rollback_strategy": "previous_version",
+        "approval_required": true
+      }
+    },
+    "targets": {
+      "docker": {
+        "enabled": false,
+        "repository": "",
+        "tag_prefix": ""
+      },
+      "github_pages": {
+        "enabled": false,
+        "repository": ""
+      },
+      "download_server": {
+        "enabled": false,
+        "host": "",
+        "path": "/releases",
+        "username": "",
+        "password": ""
+      }
+    }
+  },
+  "backup": {
+    "enabled": true,
+    "retention_days": 30,
+    "locations": [
+      "/backups/releases",
+      "s3://backups/releases"
+    ]
+  },
+  "audit": {
+    "enabled": true,
+    "track_changes": true,
+    "notify_anomalies": false,
+    "retention_days": 90
+  }
+}

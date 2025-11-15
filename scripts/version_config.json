@@ -1,0 +1,122 @@
+{
+  "project": {
+    "name": "nofx",
+    "displayName": "AI交易系统",
+    "description": "通用智能交易操作系统",
+    "versionFile": "version.txt",
+    "changelogFile": "CHANGELOG.md"
+  },
+  "build": {
+    "outputDir": "build",
+    "releaseDir": "releases",
+    "reportDir": "reports",
+    "buildFlags": {
+      "release": "-s -w",
+      "debug": ""
+    }
+  },
+  "platforms": {
+    "windows": {
+      "enabled": true,
+      "architectures": ["amd64"],
+      "extensions": [".exe"],
+      "ldflags": "-H=windowsgui"
+    },
+    "linux": {
+      "enabled": true,
+      "architectures": ["amd64", "arm64"],
+      "extensions": [""]
+    },
+    "darwin": {
+      "enabled": true,
+      "architectures": ["amd64", "arm64"],
+      "extensions": [""]
+    }
+  },
+  "release": {
+    "github": {
+      "enabled": true,
+      "repo": "your-org/nofx",
+      "draft": false,
+      "prerelease": false,
+      "generateReleaseNotes": true
+    },
+    "checksums": {
+      "algorithms": ["sha256", "md5"],
+      "generateFiles": true
+    },
+    "packages": {
+      "source": {
+        "enabled": true,
+        "format": "tar.gz"
+      },
+      "binary": {
+        "enabled": true,
+        "includeAssets": true
+      }
+    }
+  },
+  "version": {
+    "scheme": "semver",
+    "preReleaseIdentifiers": ["alpha", "beta", "rc"],
+    "autoIncrement": {
+      "enabled": true,
+      "file": "version.txt"
+    }
+  },
+  "notification": {
+    "email": {
+      "enabled": false,
+      "recipients": [],
+      "template": "release_notification.md"
+    },
+    "slack": {
+      "enabled": false,
+      "webhook": "",
+      "channel": "#releases"
+    },
+    "teams": {
+      "enabled": false,
+      "webhook": ""
+    }
+  },
+  "validation": {
+    "tests": {
+      "enabled": true,
+      "required": true,
+      "timeout": 300
+    },
+    "linting": {
+      "enabled": true,
+      "failOnError": true
+    },
+    "security": {
+      "enabled": true,
+      "vulnerabilityScan": true
+    }
+  },
+  "artifacts": {
+    "include": [
+      "README.md",
+      "LICENSE",
+      "CHANGELOG.md",
+      "config.json.example",
+      ".env.example"
+    ],
+    "exclude": [
+      "*.log",
+      "*.tmp",
+      "node_modules",
+      ".git",
+      "build",
+      "releases",
+      "reports"
+    ]
+  },
+  "postRelease": {
+    "updateVersionServer": true,
+    "tagRepository": true,
+    "generateDocs": true,
+    "notifyUsers": false
+  }
+}
