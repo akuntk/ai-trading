@@ -53,7 +53,7 @@ export function LandingPage() {
         {/* <AboutSection language={language} /> */}
         <FeaturesSection language={language} />
         <HowItWorksSection language={language} />
-        <CommunitySection />
+        {/* <CommunitySection /> */}
 
         {/* CTA */}
         <AnimatedSection backgroundColor="var(--panel-bg)">
@@ -124,7 +124,7 @@ export function LandingPage() {
             language={language}
           />
         )}
-        <FooterSection language={language} />
+        {/* <FooterSection language={language} /> */}
       </div>
     </>
   )
