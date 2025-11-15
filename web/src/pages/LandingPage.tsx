@@ -50,7 +50,7 @@ export function LandingPage() {
         }}
       >
         <HeroSection language={language} />
-        <AboutSection language={language} style={{ display: 'none' }} />
+        {/* <AboutSection language={language} /> */}
         <FeaturesSection language={language} />
         <HowItWorksSection language={language} />
         <CommunitySection />
